@@ -5,6 +5,11 @@
 ### function to view list of all models and create a new model
 
 ```py
+from django.http import HttpResponse, JsonResponse
+from rest_framework.parsers import JSONParser
+from .models import Artical
+from .serializers import ArticalSerializer
+from django.views.decorators.csrf import csrf_exempt
 # function to view list of all models and
 # create a new model
 @csrf_exempt ## Post which don't have csrf token can be allowed
@@ -33,6 +38,13 @@ def artical_list(request):
 ### Function to Retrive , Update, and delete model
 
 ```py
+from .models import Artical
+from .serializers import ArticalSerializer
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+
 # Function to Retrive , Update, and delete model
 @csrf_exempt ## Post which don't have csrf token can be allowed
 def artical_detail(request, pk):
@@ -63,4 +75,97 @@ def artical_detail(request, pk):
 
 ```
 
-## Rest framework api_views(allows us to use api debug browser support)
+> > > > **Rest framework api_views(allows us to use api debug browser support**
+
+# class based views in DRF
+
+```py
+from .models import Artical
+from .serializers import ArticalSerializer
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+# import APICiew for claased based views
+from rest_framework.views import APIView
+
+# Create your views here.
+#---------------Class Based View-------------------#
+class ArticalApiView(APIView):
+
+    def get(self, request):
+        articals = Artical.objects.all()
+        serializer = ArticalSerializer(articals, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = ArticalSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400)
+
+class ArticalDetails(APIView):
+    def get_object(self, id):
+        try:
+            return Artical.objects.get(id=id)
+        except Artical.DoesNotExist:
+            return Response(content="Sorry endpoint  does not exist", status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, id):
+        artical = self.get_object(id)
+        serializer = ArticalSerializer(artical)
+        return Response(serializer.data)
+
+    def put(self, request, id):
+        artical = self.objects.get(id)
+        serializer = ArticalSerializer(artical, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+
+    def delete(self, id, request):
+        artical = self.objects.get(id)
+        artical.delete()
+        return Response(content="Deleted successfully", status=status.HTTP_204_NO_CONTENT)
+```
+
+# DRF Generic View
+
+Django’s generic views... were developed as a shortcut for common usage patterns... They take certain common idioms and patterns found in view development and abstract them so that you can quickly write common views of data without having to repeat yourself.
+
+The generic views provided by REST framework allow you to quickly build API views that map closely to your database models.
+
+```py
+# use generic view
+from rest_framework import generics
+from rest_framework import mixins
+
+#-----------Generic Api View----------------#
+class GenericAPIView(generics.GenericAPIView,
+                     mixins.ListModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.CreateModelMixin,
+                     mixins.DestroyModelMixin):
+
+    serializer_class = ArticalSerializer
+    queryset = Artical.objects.all()
+    lookup_field = 'id'
+
+    def get(self, request, id=None):
+        if id:
+            return self.retrieve(request)
+        else:
+            return self.list(request)
+
+    def post(self, request, id=None):
+        return self.create(request)
+
+    def put(self, request, id):
+        return self.update(request, id)
+
+    def delete(self, request, id):
+        return self.destroy(request, id)
+```

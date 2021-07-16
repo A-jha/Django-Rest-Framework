@@ -2,6 +2,8 @@
 
 The first thing we need to get started on our Web API is to provide a way of serializing and deserializing the snippet instances into representations such as json. We can do this by declaring serializers that work very similar to Django's forms. Create a file in the snippets directory named serializers.py
 
+# 1.Normal Serializer
+
 ```py
 class ArticalSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=100)
@@ -76,7 +78,7 @@ ArticalSerializer():
 
 ---
 
-# Using Model Serializers
+# 2. Using Model Serializers
 
 Our SnippetSerializer class is replicating a lot of information that's also contained in the Snippet model. It would be nice if we could keep our code a bit more concise.
 
